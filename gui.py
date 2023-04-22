@@ -232,21 +232,65 @@ def validate_bitrate(bitrate):
     if bitrate <= 0:
         raise ValueError("Bitrate must be a positive integer.")
 
+# def convert_wav_to_lower_bitrate(input_file, output_file, target_bitrate):
+#     logging.info(f"Reading input WAV file: {input_file}")
+#     audio = AudioSegment.from_wav(input_file)
+    
+#     if audio.sample_width <= target_bitrate:
+#         logging.info(f"The input WAV file already has a bitrate of {audio.sample_width} bits per sample, which is equal to or lower than the target bitrate.")
+#         shutil.copy(input_file, output_file)
+#         return False
+    
+#     logging.info(f"Converting WAV file to a lower bitrate: {target_bitrate} bits per sample")
+#     audio = audio.set_frame_rate(int(audio.frame_rate * (target_bitrate / audio.sample_width)))
+    
+#     logging.info(f"Saving the output WAV file: {output_file}")
+#     audio.export(output_file, format="wav")
+#     return True
+
 def convert_wav_to_lower_bitrate(input_file, output_file, target_bitrate):
-    logging.info(f"Reading input WAV file: {input_file}")
-    audio = AudioSegment.from_wav(input_file)
-    
-    if audio.sample_width <= target_bitrate:
-        logging.info(f"The input WAV file already has a bitrate of {audio.sample_width} bits per sample, which is equal to or lower than the target bitrate.")
-        shutil.copy(input_file, output_file)
+    try:
+        logging.info(f"Reading input WAV file: {input_file}")
+        audio = AudioSegment.from_wav(input_file)
+
+        if audio.sample_width * 8 <= target_bitrate:
+            logging.info(f"The input WAV file already has a bitrate of {audio.sample_width * 8} bits per sample, which is equal to or lower than the target bitrate.")
+            shutil.copy(input_file, output_file)
+            return False
+
+        logging.info(f"Converting WAV file to a lower bitrate: {target_bitrate} bits per sample")
+        target_sample_width = target_bitrate // 8
+        audio = audio.set_sample_width(target_sample_width)
+
+        logging.info(f"Saving the output WAV file: {output_file}")
+        audio.export(output_file, format="wav")
+        return True
+
+    except Exception as e:
+        logging.error(f"An error occurred while processing the file {input_file}: {str(e)}")
         return False
+
+# def convert_wav_to_fixed_bitrate(input_file, output_file):
+#     FIXED_BITRATE = 1411  # kbps
+#     BITS_PER_BYTE = 8
+#     KILO = 1000
+
+#     logging.info(f"Reading input WAV file: {input_file}")
+#     audio = AudioSegment.from_wav(input_file)
     
-    logging.info(f"Converting WAV file to a lower bitrate: {target_bitrate} bits per sample")
-    audio = audio.set_frame_rate(int(audio.frame_rate * (target_bitrate / audio.sample_width)))
+#     target_bits_per_sample = (FIXED_BITRATE * KILO) // (audio.frame_rate * audio.channels) // BITS_PER_BYTE
+
+#     if audio.sample_width * BITS_PER_BYTE <= target_bits_per_sample:
+#         logging.info(f"The input WAV file already has a bitrate of {audio.sample_width * BITS_PER_BYTE} bits per sample, which is equal to or lower than the target bitrate.")
+#         shutil.copy(input_file, output_file)
+#         return False
     
-    logging.info(f"Saving the output WAV file: {output_file}")
-    audio.export(output_file, format="wav")
-    return True
+#     logging.info(f"Converting WAV file to a fixed bitrate: {FIXED_BITRATE} kbps")
+#     audio = audio.set_frame_rate(int(audio.frame_rate * (target_bits_per_sample / (audio.sample_width * BITS_PER_BYTE))))
+    
+#     logging.info(f"Saving the output WAV file: {output_file}")
+#     audio.export(output_file, format="wav")
+#     return True
 
 def count_wav_files(directory):
     count = 0
@@ -255,6 +299,28 @@ def count_wav_files(directory):
             if file.lower().endswith(".wav") and not file.startswith("."):
                 count += 1
     return count
+
+# def convert_wav_to_fixed_bitrate(input_file, output_file):
+#     FIXED_BITRATE = 1411  # kbps
+#     BITS_PER_BYTE = 8
+#     KILO = 1000
+
+#     logging.info(f"Reading input WAV file: {input_file}")
+#     audio = AudioSegment.from_wav(input_file)
+
+#     target_sample_width_bytes = (FIXED_BITRATE * KILO) // (audio.frame_rate * audio.channels) // BITS_PER_BYTE
+
+#     if audio.sample_width == target_sample_width_bytes:
+#         logging.info(f"The input WAV file already has a sample width of {audio.sample_width} bytes per sample, which corresponds to the target bitrate of {FIXED_BITRATE} kbps.")
+#         shutil.copy(input_file, output_file)
+#         return False
+
+#     logging.info(f"Converting WAV file to a fixed bitrate: {FIXED_BITRATE} kbps")
+#     audio = audio.set_sample_width(target_sample_width_bytes)
+
+#     logging.info(f"Saving the output WAV file: {output_file}")
+#     audio.export(output_file, format="wav", bitrate=FIXED_BITRATE)
+#     return True
 
 def convert_directory(input_dir, output_dir, target_bitrate):
     total_files = count_wav_files(input_dir)
@@ -277,12 +343,14 @@ def convert_directory(input_dir, output_dir, target_bitrate):
                 progress_var.set(f"{completed_files}/{total_files}")
                 app.update_idletasks()
 
+
+
 def browse_input_directory():
-    input_directory = filedialog.askdirectory()
+    input_directory = filedialog.askdirectory(initialdir="C:/Users/Jordan/Documents/Music/SP404SAMPLES/!Breaks/RamzoidKit2")
     input_directory_var.set(input_directory)
 
 def browse_output_directory():
-    output_directory = filedialog.askdirectory()
+    output_directory = filedialog.askdirectory(initialdir="C:/Users/Jordan/Documents/Music/ram")
     output_directory_var.set(output_directory)
 
 def convert_button_click():
@@ -296,6 +364,9 @@ def convert_button_click():
         messagebox.showinfo("Success", "WAV bitrate conversion completed")
     except Exception as e:
         messagebox.showerror("Error", str(e))
+
+
+
 
 app = tk.Tk()
 app.title("WAV Bitrate Converter")
